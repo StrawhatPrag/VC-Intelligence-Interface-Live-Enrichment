@@ -2,6 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { openai } from '@ai-sdk/openai'
 
+// In-memory cache for enrichment results (session-based)
+// In production, replace with Redis or database
+const enrichmentCache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_TTL = 3600000 // 1 hour in milliseconds
+
+function getCacheKey(website: string, companyName: string): string {
+  return `${companyName}:${website}`.toLowerCase()
+}
+
+function getFromCache(key: string): any | null {
+  const cached = enrichmentCache.get(key)
+  if (!cached) return null
+  
+  // Check if cache has expired
+  if (Date.now() - cached.timestamp > CACHE_TTL) {
+    enrichmentCache.delete(key)
+    return null
+  }
+  
+  return cached.data
+}
+
+function setInCache(key: string, data: any): void {
+  enrichmentCache.set(key, { data, timestamp: Date.now() })
+}
+
 async function fetchWebsiteContent(url: string): Promise<string> {
   try {
     // Add protocol if missing
@@ -15,23 +41,34 @@ async function fetchWebsiteContent(url: string): Promise<string> {
     })
 
     if (!response.ok) {
-      console.warn(`Failed to fetch ${fullUrl}: ${response.status}`)
+      console.warn(`[v0] Failed to fetch ${fullUrl}: ${response.status}`)
       return ''
     }
 
     const html = await response.text()
     
-    // Extract text content from HTML by removing scripts and styles
-    const text = html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    // Aggressive HTML cleaning - remove all scripts, styles, and tags
+    let cleaned = html
+      // Remove script tags and content
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      // Remove style tags and content
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      // Remove comments
+      .replace(/<!--[\s\S]*?-->/g, ' ')
+      // Remove all HTML tags
       .replace(/<[^>]+>/g, ' ')
+      // Normalize whitespace
       .replace(/\s+/g, ' ')
       .trim()
 
-    return text.slice(0, 3000) // Limit to first 3000 chars for analysis
+    // Trim to safe size for API (15KB of text should be plenty for analysis)
+    const maxChars = 15000
+    const trimmed = cleaned.slice(0, maxChars)
+
+    console.log(`[v0] Fetched and cleaned content: ${trimmed.length} chars from ${fullUrl}`)
+    return trimmed
   } catch (error) {
-    console.error(`Error fetching website: ${error}`)
+    console.error(`[v0] Error fetching website:`, error)
     return ''
   }
 }
@@ -112,6 +149,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check cache first to avoid redundant API calls
+    const cacheKey = getCacheKey(website, company_name)
+    const cachedResult = getFromCache(cacheKey)
+    
+    if (cachedResult) {
+      console.log(`[v0] Returning cached enrichment for ${company_name}`)
+      return NextResponse.json(cachedResult)
+    }
+
+    console.log(`[v0] Cache miss for ${company_name}, fetching fresh enrichment...`)
+
     // Fetch real website content
     const websiteContent = await fetchWebsiteContent(website)
 
@@ -140,10 +188,16 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     })
 
-    return NextResponse.json({
+    const result = {
       ...enrichedData,
       sources,
-    })
+    }
+
+    // Cache the result for future requests
+    setInCache(cacheKey, result)
+    console.log(`[v0] Enrichment cached for ${company_name}`)
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error('[v0] Enrichment error:', error)
 

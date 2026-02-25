@@ -275,7 +275,22 @@ export function CompanyProfileSheet({
             </TabsContent>
 
             <TabsContent value="enrichment" className="space-y-3">
-              {enrichmentError ? (
+              {isEnriching ? (
+                <div className="border border-border rounded-lg p-4 bg-card/50 space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                    <h4 className="font-medium text-foreground">Analyzing Company...</h4>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
+                    <div className="h-4 bg-muted rounded w-full animate-pulse" />
+                    <div className="h-4 bg-muted rounded w-5/6 animate-pulse" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Fetching website content and generating AI insights...
+                  </p>
+                </div>
+              ) : enrichmentError ? (
                 <div className="border border-destructive/50 rounded-lg p-4 bg-destructive/10">
                   <div className="flex gap-2">
                     <div className="flex-1">

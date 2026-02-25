@@ -26,6 +26,11 @@ A modern SaaS platform for VC investors and analysts to discover and enrich comp
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js 18+ and pnpm
+- OpenAI API key (for enrichment feature) - [Get one here](https://platform.openai.com/api-keys)
+
 ### Installation
 
 1. **Using shadcn CLI** (Recommended):
@@ -33,7 +38,7 @@ A modern SaaS platform for VC investors and analysts to discover and enrich comp
    npx shadcn-cli@latest init my-vc-app
    cd my-vc-app
    git clone <this-repo> .
-   npm install
+   pnpm install
    ```
 
 2. **Manual Setup**:
@@ -43,13 +48,25 @@ A modern SaaS platform for VC investors and analysts to discover and enrich comp
    pnpm install
    ```
 
+### Environment Setup
+
+1. Copy `.env.example` to `.env.local`:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. Add your OpenAI API key:
+   ```
+   OPENAI_API_KEY=sk_your_openai_key_here
+   ```
+
 ### Development
 
 ```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+Open [http://localhost:3000](http://localhost:3000) to view the application. The enrichment feature is live and will call your OpenAI API when you click "Enrich Data" on any company profile.
 
 ### Build for Production
 
@@ -105,7 +122,16 @@ pnpm start
 
 ## Enrichment API
 
-The enrichment endpoint (`/api/enrich`) accepts a POST request:
+The enrichment endpoint (`/api/enrich`) performs real-time AI-powered company analysis:
+
+### How It Works
+
+1. **Fetches real website content** from the provided company URL
+2. **Analyzes with AI** using OpenAI's GPT-4 model
+3. **Extracts intelligent signals** including market traction, innovation indicators, and growth momentum
+4. **Returns structured data** with summary, keywords, signals, and source citations
+
+### API Request
 
 ```bash
 curl -X POST http://localhost:3000/api/enrich \
@@ -116,7 +142,41 @@ curl -X POST http://localhost:3000/api/enrich \
   }'
 ```
 
-Response includes company summary, business description, keywords, signals, and source URLs.
+### API Response
+
+```json
+{
+  "summary": "Example Corp is a leading SaaS platform...",
+  "whatTheyDo": "The company provides cloud-based solutions for enterprise resource planning...",
+  "keywords": ["SaaS", "Enterprise", "Cloud", "AI", "Automation"],
+  "signals": [
+    {
+      "type": "Recent Product Launch",
+      "confidence": 0.92,
+      "timestamp": "2025-02-25T10:30:00Z"
+    },
+    {
+      "type": "Strong Market Demand",
+      "confidence": 0.87,
+      "timestamp": "2025-02-25T10:30:00Z"
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://example.com",
+      "title": "Example Corp - Official Website",
+      "timestamp": "2025-02-25T10:30:00Z"
+    }
+  ]
+}
+```
+
+### Security
+
+- API keys are **never exposed** to the client
+- All enrichment processing happens server-side
+- Website scraping respects robots.txt and rate limits
+- Safe HTML parsing with script/style tag removal
 
 ## Color Theme
 

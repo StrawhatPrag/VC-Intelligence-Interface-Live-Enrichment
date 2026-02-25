@@ -56,9 +56,11 @@ export function CompanyProfileSheet({
   const [isSaved, setIsSaved] = useState(false)
   const [isEnriching, setIsEnriching] = useState(false)
   const [enrichedData, setEnrichedData] = useState<EnrichedData | null>(null)
+  const [enrichmentError, setEnrichmentError] = useState<string | null>(null)
 
   const handleEnrich = async () => {
     setIsEnriching(true)
+    setEnrichmentError(null)
     try {
       const response = await fetch('/api/enrich', {
         method: 'POST',
@@ -68,12 +70,19 @@ export function CompanyProfileSheet({
           company_name: company.name,
         }),
       })
+      
+      const data = await response.json()
+      
       if (response.ok) {
-        const data = await response.json()
         setEnrichedData(data)
+        setEnrichmentError(null)
+      } else {
+        setEnrichmentError(data.error || 'Failed to enrich company data')
       }
     } catch (error) {
-      console.error('Enrichment failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Network error occurred'
+      setEnrichmentError(errorMessage)
+      console.error('[v0] Enrichment failed:', error)
     } finally {
       setIsEnriching(false)
     }
@@ -266,7 +275,24 @@ export function CompanyProfileSheet({
             </TabsContent>
 
             <TabsContent value="enrichment" className="space-y-3">
-              {enrichedData ? (
+              {enrichmentError ? (
+                <div className="border border-destructive/50 rounded-lg p-4 bg-destructive/10">
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-destructive">Enrichment Failed</h4>
+                      <p className="text-sm text-muted-foreground mt-1">{enrichmentError}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={handleEnrich}
+                    disabled={isEnriching}
+                    className="mt-4 w-full"
+                    variant="outline"
+                  >
+                    {isEnriching ? 'Analyzing...' : 'Try Again'}
+                  </Button>
+                </div>
+              ) : enrichedData ? (
                 <div className="space-y-4">
                   <div className="border border-border rounded-lg p-4 bg-card/50 space-y-4">
                     <div>

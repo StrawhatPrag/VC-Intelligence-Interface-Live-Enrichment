@@ -28,6 +28,92 @@ function setInCache(key: string, data: any): void {
   enrichmentCache.set(key, { data, timestamp: Date.now() })
 }
 
+// Deterministic signal engine - hard logic based on website patterns
+function extractDeterministicSignals(html: string): Array<{ type: string; detail: string; confidence: number; source: string }> {
+  const signals = []
+  const lowerHtml = html.toLowerCase()
+
+  // Hiring activity
+  if (lowerHtml.includes('/careers') || lowerHtml.includes('join our team') || lowerHtml.includes('we\'re hiring')) {
+    signals.push({
+      type: 'Hiring Activity',
+      detail: 'Active careers page detected',
+      confidence: 0.95,
+      source: 'website',
+    })
+  }
+
+  // Content/thought leadership engine
+  if (lowerHtml.includes('/blog') || lowerHtml.includes('latest posts') || lowerHtml.includes('insights') || lowerHtml.includes('resources')) {
+    signals.push({
+      type: 'Content Engine',
+      detail: 'Blog or resources section present',
+      confidence: 0.9,
+      source: 'website',
+    })
+  }
+
+  // Commercial intent
+  if (lowerHtml.includes('/pricing') || lowerHtml.includes('pricing page') || lowerHtml.includes('plans') && lowerHtml.includes('$')) {
+    signals.push({
+      type: 'Commercial Intent',
+      detail: 'Pricing page available',
+      confidence: 0.9,
+      source: 'website',
+    })
+  }
+
+  // Developer focus
+  if (lowerHtml.includes('docs.') || lowerHtml.includes('/docs') || lowerHtml.includes('api reference') || lowerHtml.includes('sdk')) {
+    signals.push({
+      type: 'Developer Focus',
+      detail: 'Developer documentation detected',
+      confidence: 0.85,
+      source: 'website',
+    })
+  }
+
+  // Community
+  if (lowerHtml.includes('discord') || lowerHtml.includes('community') || lowerHtml.includes('slack') || lowerHtml.includes('github')) {
+    signals.push({
+      type: 'Community Building',
+      detail: 'Active community presence',
+      confidence: 0.8,
+      source: 'website',
+    })
+  }
+
+  // Product maturity (changelog, roadmap)
+  if (lowerHtml.includes('changelog') || lowerHtml.includes('roadmap') || lowerHtml.includes('releases')) {
+    signals.push({
+      type: 'Product Maturity',
+      detail: 'Public changelog or roadmap',
+      confidence: 0.85,
+      source: 'website',
+    })
+  }
+
+  return signals
+}
+
+// Thesis matching - compute alignment with investor thesis
+function computeThesisMatch(keywords: string[], thesis: string | null): { score: number; reasons: string[] } {
+  if (!thesis) {
+    return { score: 0, reasons: [] }
+  }
+
+  const thesisTokens = thesis.toLowerCase().split(/\s+/).filter(t => t.length > 2)
+  const matches = keywords.filter(k => {
+    const keywordLower = k.toLowerCase()
+    return thesisTokens.some(token => keywordLower.includes(token) || token.includes(keywordLower))
+  })
+
+  return {
+    score: Math.min(100, matches.length * 20),
+    reasons: matches,
+  }
+}
+
 async function fetchWebsiteContent(url: string): Promise<string> {
   try {
     // Add protocol if missing
@@ -78,24 +164,26 @@ async function enrichCompanyWithAI(
   websiteContent: string
 ) {
   try {
-    const prompt = `You are a VC research analyst. Analyze the following information about a company and provide structured intelligence in valid JSON format.
+    const prompt = `You are an institutional VC analyst. Extract structured intelligence from the company website.
 
 Company Name: ${companyName}
 Website Content: ${websiteContent || 'No website content available'}
 
-Return ONLY valid JSON with this exact structure:
+Be concise. Avoid marketing language. Focus on business model, ICP, and signals of traction.
+
+Return ONLY valid JSON:
 {
-  "summary": "A 2-3 sentence executive summary of what the company does and their market position",
-  "whatTheyDo": "A detailed 2-3 sentence description of the company's core business model, products/services, and value proposition",
+  "summary": "One sentence executive summary of what they do",
+  "whatTheyDo": "Three key business capabilities as a bullet list. Format as 'Capability 1\\nCapability 2\\nCapability 3'. Be specific about what they build/offer.",
   "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
   "signals": [
-    {"type": "signal_type_1", "confidence": 0.85},
-    {"type": "signal_type_2", "confidence": 0.72},
-    {"type": "signal_type_3", "confidence": 0.68}
+    {"type": "signal_name", "confidence": 0.85, "detail": "specific detail"},
+    {"type": "signal_name", "confidence": 0.72, "detail": "specific detail"},
+    {"type": "signal_name", "confidence": 0.68, "detail": "specific detail"}
   ]
 }
 
-Focus signals on: market traction, innovation indicators, team strength, growth momentum. Ensure all values are strings except confidence values which are numbers between 0 and 1.`
+Ensure keywords are specific (e.g. "AI infrastructure" not "AI"). Signals should be based on observable facts from the website.`
 
     const { text } = await generateText({
       model: openai('gpt-4o-mini'),
@@ -142,7 +230,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { website, company_name } = await request.json()
+    const { website, company_name, thesis } = await request.json()
 
     if (!website || !company_name) {
       return NextResponse.json(
@@ -165,8 +253,30 @@ export async function POST(request: NextRequest) {
     // Fetch real website content
     const websiteContent = await fetchWebsiteContent(website)
 
+    // Extract deterministic signals from HTML
+    const deterministicSignals = extractDeterministicSignals(websiteContent)
+    console.log(`[v0] Extracted ${deterministicSignals.length} deterministic signals`)
+
     // Enrich with AI analysis
     const enrichedData = await enrichCompanyWithAI(company_name, websiteContent)
+
+    // Merge deterministic signals with AI signals
+    const allSignals = [
+      ...deterministicSignals.map(s => ({
+        type: s.type,
+        confidence: s.confidence,
+        timestamp: new Date().toISOString(),
+        detail: s.detail,
+        source: s.source,
+      })),
+      ...enrichedData.signals.map(s => ({
+        ...s,
+        timestamp: new Date().toISOString(),
+      })),
+    ]
+
+    // Compute thesis match if thesis provided
+    const thesisMatch = computeThesisMatch(enrichedData.keywords, thesis || null)
 
     // Add sources
     const sources = [
@@ -177,7 +287,7 @@ export async function POST(request: NextRequest) {
       },
     ]
 
-    // Add Crunchbase and LinkedIn as reference sources if available
+    // Add Crunchbase and LinkedIn as reference sources
     sources.push({
       url: `https://www.crunchbase.com/search/organizations?query=${encodeURIComponent(company_name)}`,
       title: `${company_name} - Crunchbase Profile`,
@@ -191,7 +301,11 @@ export async function POST(request: NextRequest) {
     })
 
     const result = {
-      ...enrichedData,
+      summary: enrichedData.summary,
+      whatTheyDo: enrichedData.whatTheyDo,
+      keywords: enrichedData.keywords,
+      signals: allSignals,
+      thesisMatch: thesisMatch.score > 0 ? thesisMatch : null,
       sources,
     }
 

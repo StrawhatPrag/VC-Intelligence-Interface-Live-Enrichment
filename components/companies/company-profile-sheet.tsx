@@ -30,6 +30,7 @@ interface CompanyProfileSheetProps {
   company: Company
   isOpen: boolean
   onClose: () => void
+  investmentThesis?: string
 }
 
 interface EnrichedData {
@@ -40,7 +41,13 @@ interface EnrichedData {
     type: string
     confidence: number
     timestamp: string
+    detail?: string
+    source?: string
   }>
+  thesisMatch?: {
+    score: number
+    reasons: string[]
+  }
   sources: Array<{
     url: string
     title: string
@@ -52,6 +59,7 @@ export function CompanyProfileSheet({
   company,
   isOpen,
   onClose,
+  investmentThesis,
 }: CompanyProfileSheetProps) {
   const [isSaved, setIsSaved] = useState(false)
   const [isEnriching, setIsEnriching] = useState(false)
@@ -68,6 +76,7 @@ export function CompanyProfileSheet({
         body: JSON.stringify({
           website: company.website,
           company_name: company.name,
+          thesis: investmentThesis,
         }),
       })
       
@@ -316,8 +325,15 @@ export function CompanyProfileSheet({
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-foreground mb-2">What They Do</h4>
-                      <p className="text-sm text-muted-foreground">{enrichedData.whatTheyDo}</p>
+                      <h4 className="font-medium text-foreground mb-3">What They Do</h4>
+                      <ul className="space-y-2">
+                        {enrichedData.whatTheyDo.split('\n').filter(line => line.trim()).map((line, idx) => (
+                          <li key={idx} className="flex gap-2 text-sm text-muted-foreground">
+                            <span className="text-primary flex-shrink-0">•</span>
+                            <span>{line.replace(/^[•-]\s*/, '').trim()}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
 
                     <div>
@@ -331,13 +347,44 @@ export function CompanyProfileSheet({
                       </div>
                     </div>
 
+                    {enrichedData.thesisMatch && (
+                      <div className="border-l-2 border-primary/50 pl-3 py-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium text-foreground">Thesis Match</h4>
+                          <span className="text-lg font-bold text-primary">{enrichedData.thesisMatch.score}%</span>
+                        </div>
+                        {enrichedData.thesisMatch.reasons.length > 0 && (
+                          <ul className="space-y-1">
+                            {enrichedData.thesisMatch.reasons.map((reason, idx) => (
+                              <li key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span className="text-green-600 font-bold">✓</span>
+                                <span className="capitalize">{reason}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+
                     <div>
                       <h4 className="font-medium text-foreground mb-3">Growth Signals</h4>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {enrichedData.signals.map((signal, idx) => (
-                          <div key={idx} className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
-                            <span className="text-sm text-foreground">{signal.type}</span>
-                            <Badge className="bg-green-600">{Math.round(signal.confidence * 100)}%</Badge>
+                          <div key={idx} className="flex gap-3 p-2 rounded border border-border/50 bg-background/50">
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-medium text-sm text-foreground">{signal.type}</span>
+                                <Badge className="bg-green-600">{Math.round(signal.confidence * 100)}%</Badge>
+                              </div>
+                              {signal.detail && (
+                                <p className="text-xs text-muted-foreground">{signal.detail}</p>
+                              )}
+                              {signal.source && (
+                                <p className="text-xs text-muted-foreground/60 mt-1">
+                                  Source: <span className="capitalize">{signal.source}</span>
+                                </p>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>

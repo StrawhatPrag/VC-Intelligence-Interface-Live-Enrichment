@@ -10,6 +10,7 @@ import { MOCK_COMPANIES } from '@/lib/mock-data'
 export function CompaniesPage() {
   const [filteredCompanies, setFilteredCompanies] = useState(MOCK_COMPANIES)
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
+  const [investmentThesis, setInvestmentThesis] = useState('')
 
   const selectedCompany = selectedCompanyId 
     ? MOCK_COMPANIES.find(c => c.id === selectedCompanyId)
@@ -18,11 +19,28 @@ export function CompaniesPage() {
   return (
     <div className="h-full flex flex-col">
       <div className="border-b border-border bg-card/30">
-        <div className="px-6 py-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Explore Companies</h1>
-          <p className="text-sm text-muted-foreground">
-            Browse and enrich company data with real-time intelligence
-          </p>
+        <div className="px-6 py-6 space-y-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Explore Companies</h1>
+            <p className="text-sm text-muted-foreground">
+              Browse and enrich company data with real-time intelligence
+            </p>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">
+              Investment Thesis (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., Early-stage AI infrastructure serving enterprises"
+              value={investmentThesis}
+              onChange={(e) => setInvestmentThesis(e.target.value)}
+              className="w-full max-w-lg px-3 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              Set your thesis to see alignment scores for each company
+            </p>
+          </div>
         </div>
       </div>
 
@@ -89,6 +107,7 @@ export function CompaniesPage() {
           company={selectedCompany}
           isOpen={!!selectedCompany}
           onClose={() => setSelectedCompanyId(null)}
+          investmentThesis={investmentThesis}
         />
       )}
     </div>

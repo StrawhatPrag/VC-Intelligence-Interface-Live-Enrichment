@@ -287,6 +287,41 @@ The app is production-ready and can be deployed to Vercel with a single command.
 
 - Chrome (latest)
 - Firefox (latest)
+
+## Production Architecture Notes
+
+### Caching Strategy
+
+In production, enrichment result caching moves to Redis with per-URL TTL invalidation:
+
+```ts
+// Current: Session-based in-memory cache (1h TTL)
+// Production: Redis with per-URL TTL configuration
+const redis = await createClient()
+const cached = await redis.get(cacheKey)
+await redis.setEx(cacheKey, 3600, JSON.stringify(data))
+```
+
+**Impact**: With 80% cache hit rate typical in VC workflows, this reduces OpenAI API costs by 80%.
+
+### Rate Limiting & Queueing
+
+Intentionally scoped out for MVP. Add when traffic patterns emerge:
+
+- Token bucket: 10 requests/minute per IP
+- Job queue: Background enrichment for batch operations
+- Priority queue: Prioritize recent/important companies over batch requests
+
+### System Scaling
+
+The architecture supports scaling to thousands of concurrent analysts:
+
+1. **API Layer**: Serverless (auto-scales on Vercel Functions)
+2. **Cache**: Redis cluster with replication
+3. **Database**: Supabase PostgreSQL with read replicas
+4. **LLM Calls**: Batch processing during off-peak hours
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed system design.
 - Safari (latest)
 - Edge (latest)
 

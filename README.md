@@ -186,6 +186,62 @@ curl -X POST http://localhost:3000/api/enrich \
 - **Dark Mode**: Sophisticated dark background with light text
 - **Neutral**: Gray scale for backgrounds and borders
 
+## Deployment
+
+### Deploy to Vercel
+
+1. **Push to GitHub**:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin <your-github-url>
+   git push -u origin main
+   ```
+
+2. **Deploy on Vercel**:
+   - Go to [vercel.com](https://vercel.com)
+   - Click "New Project"
+   - Import your GitHub repository
+   - Add environment variable: `OPENAI_API_KEY=sk_...`
+   - Click "Deploy"
+
+3. **Enable Caching** (Optional, for production):
+   - Replace in-memory cache with Redis
+   - Update `enrichmentCache` in `/app/api/enrich/route.ts`
+   - Deploy changes
+
+## Known Limitations
+
+- **No Persistent Storage**: All lists and searches reset on refresh (ready for Supabase integration)
+- **Mock Companies**: 20 sample companies for demonstration (easily replaceable with real data)
+- **OpenAI Rate Limits**: Default API has rate limiting (contact OpenAI for higher limits)
+- **Website Scraping**: Some sites may block scraping attempts or have robots.txt restrictions
+- **In-Memory Cache**: Cache is lost on server restart (use Redis for persistence)
+- **API Timeout**: Enrichment requests timeout after 30s (adjust in vercel.json if needed)
+
+## Troubleshooting
+
+### "Enrichment service not configured" Error
+- Ensure `OPENAI_API_KEY` is set in `.env.local` (local) or Vercel environment variables (production)
+- Verify API key is valid: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+
+### "Failed to fetch website" Error
+- Website may be blocking automated access or requires authentication
+- Check if robots.txt allows scraping
+- Try a different company or website
+
+### "Failed to parse AI response"
+- OpenAI API may have returned malformed JSON
+- Retry the enrichment (it uses caching, so no double charge)
+- Check API usage at [platform.openai.com/account/billing](https://platform.openai.com/account/billing)
+
+### Slow Enrichment on First Request
+- First enrichment for a company takes 2-3 seconds (API call to OpenAI)
+- Subsequent requests for same company return ~500ms from cache
+- This is normal and expected
+
 ## Future Enhancements
 
 - Supabase integration for persistent storage

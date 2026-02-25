@@ -78,12 +78,12 @@ async function enrichCompanyWithAI(
   websiteContent: string
 ) {
   try {
-    const prompt = `You are a VC research analyst. Analyze the following information about a company and provide structured intelligence.
+    const prompt = `You are a VC research analyst. Analyze the following information about a company and provide structured intelligence in valid JSON format.
 
 Company Name: ${companyName}
 Website Content: ${websiteContent || 'No website content available'}
 
-Provide a JSON response with exactly this structure (no markdown, valid JSON only):
+Return ONLY valid JSON with this exact structure:
 {
   "summary": "A 2-3 sentence executive summary of what the company does and their market position",
   "whatTheyDo": "A detailed 2-3 sentence description of the company's core business model, products/services, and value proposition",
@@ -95,22 +95,24 @@ Provide a JSON response with exactly this structure (no markdown, valid JSON onl
   ]
 }
 
-Focus signals on: market traction, innovation indicators, team strength, growth momentum.`
+Focus signals on: market traction, innovation indicators, team strength, growth momentum. Ensure all values are strings except confidence values which are numbers between 0 and 1.`
 
     const { text } = await generateText({
       model: openai('gpt-4o-mini'),
       prompt,
       temperature: 0.7,
       maxTokens: 1000,
+      responseFormat: { type: 'json_object' },
     })
 
-    // Parse the JSON response
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      throw new Error('Failed to extract JSON from AI response')
+    // Parse the JSON response (guaranteed to be valid JSON due to response_format)
+    let parsed
+    try {
+      parsed = JSON.parse(text)
+    } catch (parseError) {
+      console.error('[v0] JSON parse error:', parseError, 'Raw text:', text)
+      throw new Error('Failed to parse AI response as JSON')
     }
-
-    const parsed = JSON.parse(jsonMatch[0])
 
     return {
       summary: parsed.summary || '',

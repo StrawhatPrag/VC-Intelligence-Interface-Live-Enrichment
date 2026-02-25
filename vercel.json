@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "env": {
+    "NEXT_PUBLIC_APP_NAME": "VC Intelligence",
+    "NEXT_PUBLIC_APP_URL": "@app-url"
+  },
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "regions": ["sfo1"],
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  }
+}

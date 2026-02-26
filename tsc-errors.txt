@@ -1,0 +1,6 @@
+app/api/enrich/route.ts(189,7): error TS2322: Type 'LanguageModelV1' is not assignable to type 'LanguageModel'.
+  Type 'LanguageModelV1' is not assignable to type '(string & {}) | LanguageModelV3 | LanguageModelV2'.
+    Property 'supportedUrls' is missing in type 'LanguageModelV1' but required in type 'LanguageModelV2'.
+app/api/enrich/route.ts(272,35): error TS7006: Parameter 's' implicitly has an 'any' type.
+components/companies/company-profile-sheet.tsx(179,33): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ Seed: string; 'Series A': string; 'Series B': string; 'Late Stage': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ Seed: string; 'Series A': string; 'Series B': string; 'Late Stage': string; }'.

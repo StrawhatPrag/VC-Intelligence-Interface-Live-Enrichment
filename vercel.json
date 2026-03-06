@@ -2,7 +2,7 @@
   "version": 2,
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "installCommand": "pnpm install",
+  "installCommand": "npm install",
   "framework": "nextjs",
   "regions": [
     "sfo1"
@@ -15,8 +15,8 @@
   },
   "env": {
     "NEXT_PUBLIC_APP_NAME": "VC Intelligence",
-    "NEXT_PUBLIC_APP_URL": "@app-url",
-    "OPENAI_API_KEY": "@openai-api-key"
+    "NEXT_PUBLIC_APP_URL": "https://vc-intelligence.vercel.app",
+    "OPENAI_API_KEY": "dummy_key_for_build"
   },
   "build": {
     "env": {

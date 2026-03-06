@@ -288,7 +288,9 @@ export function CompanyProfileSheet({
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <h4 className="font-medium text-destructive">Enrichment Failed</h4>
-                      <p className="text-sm text-muted-foreground mt-1">{enrichmentError}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {enrichmentError instanceof Error ? enrichmentError.message : String(enrichmentError)}
+                      </p>
                     </div>
                   </div>
                   <Button 
@@ -305,13 +307,13 @@ export function CompanyProfileSheet({
                   <div className="border border-border rounded-lg p-4 bg-card/50 space-y-4">
                     <div>
                       <h4 className="font-medium text-foreground mb-2">Company Summary</h4>
-                      <p className="text-sm text-muted-foreground">{enrichedData.summary}</p>
+                      <p className="text-sm text-muted-foreground">{(enrichedData as EnrichedData).summary}</p>
                     </div>
 
                     <div>
                       <h4 className="font-medium text-foreground mb-3">What They Do</h4>
                       <ul className="space-y-2">
-                        {enrichedData.whatTheyDo.split('\n').filter((line: string) => line.trim()).map((line: string, idx: number) => (
+                        {(enrichedData as EnrichedData).whatTheyDo.split('\n').filter((line: string) => line.trim()).map((line: string, idx: number) => (
                           <li key={idx} className="flex gap-2 text-sm text-muted-foreground">
                             <span className="text-primary flex-shrink-0">•</span>
                             <span>{line.replace(/^[•-]\s*/, '').trim()}</span>
@@ -323,7 +325,7 @@ export function CompanyProfileSheet({
                     <div>
                       <h4 className="font-medium text-foreground mb-3">Key Keywords</h4>
                       <div className="flex gap-2 flex-wrap">
-                        {enrichedData.keywords.map((keyword: string) => (
+                        {(enrichedData as EnrichedData).keywords.map((keyword: string) => (
                           <Badge key={keyword} variant="secondary">
                             {keyword}
                           </Badge>
@@ -331,15 +333,15 @@ export function CompanyProfileSheet({
                       </div>
                     </div>
 
-                    {enrichedData.thesisMatch && (
+                    {(enrichedData as EnrichedData).thesisMatch && (
                       <div className="border-l-2 border-primary/50 pl-3 py-2">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium text-foreground">Thesis Match</h4>
-                          <span className="text-lg font-bold text-primary">{enrichedData.thesisMatch.score}%</span>
+                          <span className="text-lg font-bold text-primary">{(enrichedData as EnrichedData).thesisMatch!.score}%</span>
                         </div>
-                        {enrichedData.thesisMatch.reasons.length > 0 && (
+                        {(enrichedData as EnrichedData).thesisMatch!.reasons.length > 0 && (
                           <ul className="space-y-1">
-                            {enrichedData.thesisMatch.reasons.map((reason: string, idx: number) => (
+                            {(enrichedData as EnrichedData).thesisMatch!.reasons.map((reason: string, idx: number) => (
                               <li key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <span className="text-green-600 font-bold">✓</span>
                                 <span className="capitalize">{reason}</span>
@@ -353,7 +355,7 @@ export function CompanyProfileSheet({
                     <div>
                       <h4 className="font-medium text-foreground mb-3">Growth Signals</h4>
                       <div className="space-y-3">
-                        {enrichedData.signals.map((signal: { type: string, confidence: number, detail?: string, source?: string }, idx: number) => (
+                        {(enrichedData as EnrichedData).signals.map((signal: { type: string, confidence: number, detail?: string, source?: string }, idx: number) => (
                           <div key={idx} className="flex gap-3 p-2 rounded border border-border/50 bg-background/50">
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-1">
@@ -377,7 +379,7 @@ export function CompanyProfileSheet({
                     <div>
                       <h4 className="font-medium text-foreground mb-3">Sources</h4>
                       <div className="space-y-2">
-                        {enrichedData.sources.map((source: { url: string, title: string, timestamp: string }, idx: number) => (
+                        {(enrichedData as EnrichedData).sources.map((source: { url: string, title: string, timestamp: string }, idx: number) => (
                           <a
                             key={idx}
                             href={source.url}

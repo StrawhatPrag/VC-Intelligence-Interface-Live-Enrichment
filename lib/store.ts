@@ -6,6 +6,8 @@ interface StoreState {
   toggleSavedCompany: (id: string) => void
   investmentThesis: string
   setInvestmentThesis: (thesis: string) => void
+  searchQuery: string
+  setSearchQuery: (query: string) => void
 }
 
 export const useStore = create<StoreState>()(
@@ -24,6 +26,8 @@ export const useStore = create<StoreState>()(
         }),
       investmentThesis: '',
       setInvestmentThesis: (thesis) => set({ investmentThesis: thesis }),
+      searchQuery: '',
+      setSearchQuery: (query) => set({ searchQuery: query }),
     }),
     {
       name: 'vc-intelligence-storage',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { CompaniesTable } from '@/components/companies/companies-table'
 import { CompanyFilters } from '@/components/companies/company-filters'
 import { CompanyProfileSheet } from '@/components/companies/company-profile-sheet'
@@ -15,11 +15,24 @@ const EMPTY_COMPANIES: Company[] = []
 
 export function CompaniesPage() {
   const { data: companies = EMPTY_COMPANIES, isLoading, error } = useSWR('companies', getCompanies)
-  const [filteredCompanies, setFilteredCompanies] = useState(companies)
+  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>(companies)
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
   
   const investmentThesis = useStore((state) => state.investmentThesis)
   const setInvestmentThesis = useStore((state) => state.setInvestmentThesis)
+  const searchQuery = useStore((state) => state.searchQuery)
+
+  // Apply top-bar search query on top of sidebar filter results
+  const displayedCompanies = useMemo(() => {
+    if (!searchQuery.trim()) return filteredCompanies
+    const q = searchQuery.toLowerCase()
+    return filteredCompanies.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.industry.toLowerCase().includes(q) ||
+        (c.description ?? '').toLowerCase().includes(q)
+    )
+  }, [filteredCompanies, searchQuery])
 
   const selectedCompany = selectedCompanyId 
     ? companies.find(c => c.id === selectedCompanyId)
@@ -78,7 +91,7 @@ export function CompaniesPage() {
                   <TabsTrigger value="table" className="gap-2">
                     <span>Table View</span>
                     <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
-                      {filteredCompanies.length}
+                      {displayedCompanies.length}
                     </span>
                   </TabsTrigger>
                   <TabsTrigger value="cards" className="gap-2">
@@ -88,13 +101,13 @@ export function CompaniesPage() {
               </div>
 
               <TabsContent value="table" className="flex-1 overflow-auto">
-                {filteredCompanies.length === 0 ? (
+                {displayedCompanies.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-muted-foreground p-8 text-center">
                     <p>No companies match your current filters. Try adjusting them.</p>
                   </div>
                 ) : (
                   <CompaniesTable 
-                    companies={filteredCompanies}
+                    companies={displayedCompanies}
                     selectedCompany={selectedCompanyId}
                     onSelectCompany={setSelectedCompanyId}
                   />
@@ -102,13 +115,13 @@ export function CompaniesPage() {
               </TabsContent>
 
               <TabsContent value="cards" className="flex-1 overflow-auto p-6">
-                {filteredCompanies.length === 0 ? (
+                {displayedCompanies.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-muted-foreground p-8 text-center">
                     <p>No companies match your current filters. Try adjusting them.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredCompanies.map((company) => (
+                    {displayedCompanies.map((company) => (
                       <div 
                         key={company.id}
                         className="p-4 border border-border rounded-lg bg-card hover:bg-card/80 cursor-pointer transition-colors"
@@ -145,4 +158,3 @@ export function CompaniesPage() {
     </div>
   )
 }
-

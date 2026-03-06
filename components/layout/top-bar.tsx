@@ -3,8 +3,12 @@
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, Plus, Download } from 'lucide-react'
+import { useStore } from '@/lib/store'
 
 export function TopBar() {
+  const searchQuery = useStore((state) => state.searchQuery)
+  const setSearchQuery = useStore((state) => state.setSearchQuery)
+
   return (
     <div className="border-b border-border bg-card/50 backdrop-blur-sm">
       <div className="px-6 py-4 flex items-center justify-between gap-4">
@@ -14,6 +18,8 @@ export function TopBar() {
             <Input
               placeholder="Search companies, keywords..."
               className="pl-10 bg-background border-border placeholder:text-muted-foreground"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>

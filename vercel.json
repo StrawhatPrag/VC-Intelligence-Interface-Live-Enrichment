@@ -1,34 +1,22 @@
 {
   "version": 2,
-<<<<<<< HEAD
-=======
-  "env": {
-    "NEXT_PUBLIC_APP_NAME": "VC Intelligence",
-    "NEXT_PUBLIC_APP_URL": "@app-url"
-  },
->>>>>>> 17cd3c014b4fc707c41504c33c910f0875f32f7d
   "buildCommand": "next build",
   "outputDirectory": ".next",
   "installCommand": "pnpm install",
   "framework": "nextjs",
-<<<<<<< HEAD
   "regions": [
     "sfo1"
   ],
   "functions": {
     "app/api/**/*.ts": {
-=======
-  "regions": ["sfo1"],
-  "functions": {
-    "api/**/*.ts": {
->>>>>>> 17cd3c014b4fc707c41504c33c910f0875f32f7d
       "memory": 1024,
       "maxDuration": 30
     }
   },
   "env": {
-<<<<<<< HEAD
-    "NEXT_PUBLIC_APP_NAME": "VC Intelligence"
+    "NEXT_PUBLIC_APP_NAME": "VC Intelligence",
+    "NEXT_PUBLIC_APP_URL": "@app-url",
+    "OPENAI_API_KEY": "@openai-api-key"
   },
   "build": {
     "env": {
@@ -36,11 +24,3 @@
     }
   }
 }
-=======
-    "OPENAI_API_KEY": "@openai-api-key"
-  },
-  "buildEnvironment": {
-    "SKIP_ENV_VALIDATION": "true"
-  }
-}
->>>>>>> 17cd3c014b4fc707c41504c33c910f0875f32f7d
